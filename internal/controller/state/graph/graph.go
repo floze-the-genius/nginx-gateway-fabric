@@ -54,6 +54,7 @@ type ClusterState struct {
 	ListenerSets          map[types.NamespacedName]*gatewayv1.ListenerSet
 	APPolicies            map[types.NamespacedName]*unstructured.Unstructured
 	APLogConfs            map[types.NamespacedName]*unstructured.Unstructured
+	ExternalLoadBalancer  map[types.NamespacedName]*ngfAPIv1alpha1.ExternalLoadBalancer
 }
 
 // Graph is a Graph-like representation of Gateway API resources.
@@ -103,6 +104,8 @@ type Graph struct {
 	SnippetsFilters map[types.NamespacedName]*SnippetsFilter
 	// AuthenticationFilters holds all the AuthenticationFilters.
 	AuthenticationFilters map[types.NamespacedName]*AuthenticationFilter
+	// ExternalLoadBalancers holds all the processed ExternalLoadBalancer resources.
+	ExternalLoadBalancers map[types.NamespacedName]*ExternalLoadBalancer
 	// ListenerSets holds all the ListenerSets.
 	ListenerSets map[types.NamespacedName]*ListenerSet
 	// PlusSecrets holds the secrets related to NGINX Plus licensing.
@@ -303,6 +306,8 @@ func BuildGraph(
 
 	attachListenerSetsToGateways(gws, listenerSets)
 
+	processedExternalLoadBalancers := processExternalLoadBalancers(state.ExternalLoadBalancer, gws)
+
 	processedBackendTLSPolicies := processBackendTLSPolicies(
 		state.BackendTLSPolicies,
 		resourceResolver,
@@ -424,6 +429,7 @@ func BuildGraph(
 		NGFPolicies:                processedPolicies,
 		SnippetsFilters:            processedSnippetsFilters,
 		AuthenticationFilters:      processedAuthenticationFilters,
+		ExternalLoadBalancers:      processedExternalLoadBalancers,
 		ListenerSets:               listenerSets,
 		PlusSecrets:                plusSecrets,
 		PLMSecrets:                 plmSecretNames,

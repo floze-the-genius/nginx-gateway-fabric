@@ -252,6 +252,9 @@ Create namespaced RBAC rules.
   - proxysettingspolicies
   - ratelimitpolicies
   - wafpolicies
+  {{- if .Values.nginxGateway.externalLoadBalancer.enable }}
+  - externalloadbalancers
+  {{- end }}
   {{- if or .Values.nginxGateway.snippetsFilters.enable .Values.nginxGateway.snippets.enable }}
   - snippetsfilters
   {{- end }}
@@ -272,6 +275,9 @@ Create namespaced RBAC rules.
   - proxysettingspolicies/status
   - ratelimitpolicies/status
   - wafpolicies/status
+  {{- if .Values.nginxGateway.externalLoadBalancer.enable }}
+  - externalloadbalancers/status
+  {{- end }}
   {{- if or .Values.nginxGateway.snippetsFilters.enable .Values.nginxGateway.snippets.enable }}
   - snippetsfilters/status
   {{- end }}
@@ -391,5 +397,25 @@ Create cluster RBAC rules.
   - {{ include "nginx-gateway.scc-name" . }}-nginx
   verbs:
   - use
+  {{- end }}
+  {{- if .Values.nginxGateway.externalLoadBalancer.enable }}
+- apiGroups:
+  - cis.f5.com
+  resources:
+  - ingresslinks
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
+  - cis.f5.com
+  resources:
+  - ingresslinks/status
+  verbs:
+  - get
   {{- end }}
 {{- end }}

@@ -246,6 +246,25 @@ func TestBuildGraph(t *testing.T) {
 		},
 	}
 
+	elbGW1 := &ngfAPIv1alpha1.ExternalLoadBalancer{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "elb-gateway-1",
+			Namespace: testNs,
+		},
+		Spec: ngfAPIv1alpha1.ExternalLoadBalancerSpec{
+			TargetRefs: []gatewayv1.LocalPolicyTargetReference{
+				{
+					Group: gatewayv1.GroupName,
+					Kind:  kinds.Gateway,
+					Name:  "gateway-1",
+				},
+			},
+			GatewayLink: &ngfAPIv1alpha1.GatewayLinkConfig{
+				VirtualServerAddress: helpers.GetPointer("10.10.10.10"),
+			},
+		},
+	}
+
 	// AuthenticationFilter to be used in tests
 	refAuthenticationFilterExtensionRef := &gatewayv1.LocalObjectReference{
 		Group: ngfAPIv1alpha1.GroupName,
@@ -1303,6 +1322,9 @@ func TestBuildGraph(t *testing.T) {
 				client.ObjectKeyFromObject(unreferencedSnippetsFilter): unreferencedSnippetsFilter,
 				client.ObjectKeyFromObject(referencedSnippetsFilter):   referencedSnippetsFilter,
 			},
+			ExternalLoadBalancer: map[types.NamespacedName]*ngfAPIv1alpha1.ExternalLoadBalancer{
+				client.ObjectKeyFromObject(elbGW1): elbGW1,
+			},
 			AuthenticationFilters: map[types.NamespacedName]*ngfAPIv1alpha1.AuthenticationFilter{
 				client.ObjectKeyFromObject(unreferencedAuthenticationFilter):   unreferencedAuthenticationFilter,
 				client.ObjectKeyFromObject(referencedAuthenticationFilter):     referencedAuthenticationFilter,
@@ -2072,8 +2094,9 @@ func TestBuildGraph(t *testing.T) {
 							Attachable:      true,
 						},
 					},
-					Valid:    true,
-					Policies: []*Policy{processedGwPolicy},
+					Valid:                true,
+					Policies:             []*Policy{processedGwPolicy},
+					ExternalLoadBalancer: elbGW1,
 					AttachedListenerSets: map[types.NamespacedName]*ListenerSet{
 						client.ObjectKeyFromObject(validListenerSet): {
 							Source:  validListenerSet,
@@ -2354,6 +2377,13 @@ func TestBuildGraph(t *testing.T) {
 				client.ObjectKeyFromObject(unreferencedAuthenticationFilter):   processedUnrefAuthenticationFilter,
 				client.ObjectKeyFromObject(referencedAuthenticationFilter):     processedRefAuthenticationFilter,
 				client.ObjectKeyFromObject(referencedOIDCAuthenticationFilter): processedRefOIDCAuthenticationFilter,
+			},
+			ExternalLoadBalancers: map[types.NamespacedName]*ExternalLoadBalancer{
+				client.ObjectKeyFromObject(elbGW1): {
+					Source:     elbGW1,
+					Valid:      true,
+					Conditions: []conditions.Condition{conditions.NewExternalLoadBalancerAccepted()},
+				},
 			},
 			ListenerSets: map[types.NamespacedName]*ListenerSet{
 				client.ObjectKeyFromObject(validListenerSet): {
